@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import type { Job } from "@/lib/types";
 
+type Health = {
+  ok: boolean;
+  checks: {
+    ffmpeg: boolean;
+    ffprobe: boolean;
+    ytDlp: boolean;
+    font: boolean;
+    anthropicKey: boolean;
+    openaiKey: boolean;
+  };
+};
+
 export default function Home() {
   const [mode, setMode] = useState<"upload" | "url">("url");
   const [file, setFile] = useState<File | null>(null);
@@ -14,6 +26,14 @@ export default function Home() {
   const [job, setJob] = useState<Job | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [health, setHealth] = useState<Health | null>(null);
+
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then(setHealth)
+      .catch(() => setHealth(null));
+  }, []);
 
   useEffect(() => {
     if (!jobId) return;
@@ -64,6 +84,21 @@ export default function Home() {
         <h1 className="text-4xl font-bold mb-2">🎬 ClipViral</h1>
         <p className="text-zinc-400">Auto-clip podcast jadi vidio viral TikTok/Reels — pakai AI</p>
       </header>
+
+      {health && !health.ok && (
+        <div className="mb-6 p-4 bg-yellow-950 border border-yellow-700 rounded-xl text-sm space-y-1">
+          <p className="font-semibold text-yellow-300">⚠ Ada dependency yang belum siap:</p>
+          <ul className="text-yellow-200 list-disc list-inside">
+            {!health.checks.ffmpeg && <li>ffmpeg tidak terdeteksi — install dulu sebelum lanjut</li>}
+            {!health.checks.ffprobe && <li>ffprobe tidak terdeteksi (biasanya satu paket sama ffmpeg)</li>}
+            {!health.checks.anthropicKey && <li>ANTHROPIC_API_KEY belum di-set di .env</li>}
+            {!health.checks.openaiKey && <li>OPENAI_API_KEY belum di-set di .env</li>}
+            {!health.checks.ytDlp && mode === "url" && (
+              <li>yt-dlp tidak terdeteksi — wajib kalau pakai URL YouTube (`pip install yt-dlp`)</li>
+            )}
+          </ul>
+        </div>
+      )}
 
       {!jobId && (
         <form onSubmit={submit} className="space-y-5 bg-zinc-900 p-6 rounded-xl border border-zinc-800">

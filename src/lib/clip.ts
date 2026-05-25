@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { runFfmpeg } from "./ffmpeg";
+import { resolveBoldFont } from "./fonts";
 import { TranscriptSegment, ViralMoment, Clip } from "./types";
 
 function fmtTime(t: number): string {
@@ -57,6 +58,10 @@ export async function makeClip(args: {
   const hookText = escapeDrawtext(moment.hook);
   const titleText = escapeDrawtext(moment.title);
 
+  const fontPath = await resolveBoldFont();
+  // drawtext picks up libavfilter's default font when fontfile is omitted.
+  const fontfileArg = fontPath ? `:fontfile=${fontPath.replace(/\\/g, "/").replace(/:/g, "\\:")}` : "";
+
   // Pipeline:
   // 1. Trim source to moment range
   // 2. Crop+scale to 9:16 (1080x1920) - center crop
@@ -70,9 +75,9 @@ export async function makeClip(args: {
     `subtitles='${srtEscaped}':force_style='${subStyle}'`,
     // Hook badge at top - shown for first 3 seconds
     `drawbox=x=0:y=200:w=1080:h=180:color=red@0.85:t=fill:enable='lt(t,3)'`,
-    `drawtext=text='${hookText}':fontcolor=white:fontsize=56:x=(w-text_w)/2:y=240:box=0:enable='lt(t,3)':fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf`,
+    `drawtext=text='${hookText}':fontcolor=white:fontsize=56:x=(w-text_w)/2:y=240:box=0:enable='lt(t,3)'${fontfileArg}`,
     // Title big in middle - first 3s
-    `drawtext=text='${titleText}':fontcolor=yellow:fontsize=72:x=(w-text_w)/2:y=(h-text_h)/2:borderw=4:bordercolor=black:enable='lt(t,3)':fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf`,
+    `drawtext=text='${titleText}':fontcolor=yellow:fontsize=72:x=(w-text_w)/2:y=(h-text_h)/2:borderw=4:bordercolor=black:enable='lt(t,3)'${fontfileArg}`,
   ].join(",");
 
   const ffArgs = [

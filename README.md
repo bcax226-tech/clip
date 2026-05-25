@@ -13,10 +13,12 @@ Pipeline-nya:
 - Node.js 20+
 - **FFmpeg** & **ffprobe** terinstall (`apt install ffmpeg` / `brew install ffmpeg`)
 - **yt-dlp** kalau mau pakai URL YouTube (`pip install yt-dlp`)
-- Font DejaVu Sans Bold di `/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf` (default di Ubuntu/Debian — edit path di `src/lib/clip.ts` kalau lain)
+- Font bold (auto-detect: DejaVu Sans Bold di Linux, Arial Bold di macOS/Windows). Kalau gak ketemu, fallback ke default FFmpeg font.
 - API key:
   - `ANTHROPIC_API_KEY` ([console.anthropic.com](https://console.anthropic.com))
   - `OPENAI_API_KEY` (untuk Whisper — [platform.openai.com](https://platform.openai.com))
+
+Cek kesiapan environment kapan saja: `GET /api/health` (UI juga tampilin warning kalau ada yang kurang).
 
 ## Setup
 
@@ -57,5 +59,5 @@ src/
 - Job state disimpan di filesystem (`data/jobs/*.json`). Untuk production swap ke Redis/Postgres.
 - Pipeline dijalankan inline di Next.js route (fire-and-forget). Untuk video panjang / banyak user, pakai queue (BullMQ + worker terpisah).
 - `maxDuration = 600` di route — sesuaikan kalau deploy ke serverless (Vercel free max 60s).
-- Whisper API limit 25MB per upload. Untuk audio > 25MB perlu split — belum diimplementasi.
-- Font path di-hardcode untuk Linux. Untuk Mac/Windows ubah path di `src/lib/clip.ts`.
+- Whisper API limit 25MB per upload. Untuk audio panjang otomatis di-split jadi chunk 10 menit lalu timestamp di-offset waktu merge — `src/lib/transcribe.ts`.
+- Font bold di-auto-detect lintas OS (`src/lib/fonts.ts`). Kalau gak ketemu, drawtext pakai default font FFmpeg.

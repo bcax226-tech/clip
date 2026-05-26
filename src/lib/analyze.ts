@@ -29,7 +29,7 @@ export async function analyzeTranscript(
     .join("\n");
 
   const response = await client.messages.create({
-    model: "claude-opus-4-20250514",
+    model: "claude-opus-4-7",
     max_tokens: 8000,
     system: SYSTEM,
     tools: [

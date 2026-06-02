@@ -4,19 +4,30 @@ import { resolveBoldFont } from "@/lib/fonts";
 
 export const runtime = "nodejs";
 
-function checkBinary(bin: string): Promise<boolean> {
+function checkBinary(bin: string, args: string[] = ["-version"]): Promise<boolean> {
   return new Promise((resolve) => {
-    const proc = spawn(bin, ["-version"]);
+    const proc = spawn(bin, args);
+    proc.on("error", () => resolve(false));
+    proc.on("close", (code) => resolve(code === 0));
+  });
+}
+
+function checkPythonModule(py: string, mod: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const proc = spawn(py, ["-c", `import ${mod}`]);
     proc.on("error", () => resolve(false));
     proc.on("close", (code) => resolve(code === 0));
   });
 }
 
 export async function GET() {
-  const [ffmpeg, ffprobe, ytDlp, fontPath] = await Promise.all([
+  const pyBin = process.env.PYTHON_BIN || "python3";
+  const [ffmpeg, ffprobe, ytDlp, python, fasterWhisper, fontPath] = await Promise.all([
     checkBinary("ffmpeg"),
     checkBinary("ffprobe"),
     checkBinary("yt-dlp"),
+    checkBinary(pyBin, ["--version"]),
+    checkPythonModule(pyBin, "faster_whisper"),
     resolveBoldFont(),
   ]);
 
@@ -24,12 +35,14 @@ export async function GET() {
     ffmpeg,
     ffprobe,
     ytDlp,
+    python,
+    fasterWhisper,
     font: fontPath !== null,
     anthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
-    openaiKey: Boolean(process.env.OPENAI_API_KEY),
   };
 
-  const ok = checks.ffmpeg && checks.ffprobe && checks.anthropicKey && checks.openaiKey;
+  const ok =
+    checks.ffmpeg && checks.ffprobe && checks.python && checks.fasterWhisper && checks.anthropicKey;
 
   return NextResponse.json({
     ok,
@@ -37,7 +50,10 @@ export async function GET() {
     fontPath,
     notes: {
       ytDlp: ytDlp ? null : "Opsional, hanya dibutuhkan untuk download dari URL YouTube",
-      font: fontPath ? null : "Font bold tidak ketemu — drawtext akan pakai default font (mungkin terlihat lebih kecil)",
+      fasterWhisper: fasterWhisper ? null : "Install: pip install faster-whisper",
+      font: fontPath
+        ? null
+        : "Font bold tidak ketemu — drawtext akan pakai default font (mungkin terlihat lebih kecil)",
     },
   });
 }

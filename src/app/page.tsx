@@ -9,9 +9,10 @@ type Health = {
     ffmpeg: boolean;
     ffprobe: boolean;
     ytDlp: boolean;
+    python: boolean;
+    fasterWhisper: boolean;
     font: boolean;
     anthropicKey: boolean;
-    openaiKey: boolean;
   };
 };
 
@@ -92,7 +93,10 @@ export default function Home() {
             {!health.checks.ffmpeg && <li>ffmpeg tidak terdeteksi — install dulu sebelum lanjut</li>}
             {!health.checks.ffprobe && <li>ffprobe tidak terdeteksi (biasanya satu paket sama ffmpeg)</li>}
             {!health.checks.anthropicKey && <li>ANTHROPIC_API_KEY belum di-set di .env</li>}
-            {!health.checks.openaiKey && <li>OPENAI_API_KEY belum di-set di .env</li>}
+            {!health.checks.python && <li>python3 tidak terdeteksi — wajib untuk faster-whisper</li>}
+            {!health.checks.fasterWhisper && (
+              <li>faster-whisper belum terinstall — jalankan <code className="bg-zinc-800 px-1 rounded">pip install faster-whisper</code></li>
+            )}
             {!health.checks.ytDlp && mode === "url" && (
               <li>yt-dlp tidak terdeteksi — wajib kalau pakai URL YouTube (`pip install yt-dlp`)</li>
             )}
